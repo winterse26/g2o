@@ -145,6 +145,63 @@ Within cmake-gui set the variable G2O_EIGEN3_INCLUDE to that directory.
 -   `cd build`
 -   `cmake -DCMAKE_TOOLCHAIN_FILE=../script/android.toolchain.cmake -DANDROID_NDK=<YOUR_PATH_TO_ANDROID_NDK_r10d+> -DCMAKE_BUILD_TYPE=Release -DANDROID_ABI="armeabi-v7a with NEON" -DEIGEN3_INCLUDE_DIR="<YOUR_PATH_TO_EIGEN>" -DEIGEN3_VERSION_OK=ON .. && cmake --build .`
 
+## Docker
+
+Build (skip args if no proxy present):
+```
+docker build \
+  --build-arg http_proxy=http://host.docker.internal:3128 \
+  --build-arg https_proxy=http://host.docker.internal:3128 \
+  --build-arg HTTP_PROXY=http://host.docker.internal:3128 \
+  --build-arg HTTPS_PROXY=http://host.docker.internal:3128 \
+  -t "g2o-alpine" .
+```
+
+```
+docker build \
+  --build-arg http_proxy=http://host.docker.internal:3128 \
+  --build-arg https_proxy=http://host.docker.internal:3128 \
+  --build-arg HTTP_PROXY=http://host.docker.internal:3128 \
+  --build-arg HTTPS_PROXY=http://host.docker.internal:3128 \
+  -t "g2o" --target cli .
+```
+
+Run or Start:
+```
+docker create --name g2olib -t -i g2o-alpine
+docker start -i -a g2olib
+docker run g2o
+docker run g2o -listSolvers
+```
+
+## Java using Protobuf
+
+```
+...
+
+G2O.Graph g = ...
+int bs = g.getSerializedSize();
+
+final ByteBuffer buffer = ByteBuffer.allocateDirect(bs);
+
+final CodedOutputStream os = CodedOutputStream.newInstance(buffer);
+g.writeTo(os);
+os.flush();
+
+final int[] r = { 0 };
+
+final int rc = g2o.odoslam.odoslam.process(buffer, buffer.remaining(), buffer.capacity(), r, maxIterations, useGain, checkInput, verbose);
+
+Preconditions.checkState(rc == 0, rc);
+
+buffer.clear();
+buffer.limit(r[0]);
+
+G2O.Graph optimized = G2O.Graph.parseFrom(buffer);
+
+...
+```
+
 ## Acknowledgments
 
 We thank the following contributors for providing patches:
